@@ -69,7 +69,12 @@ Saved/*
 # Compiled source files for the engine to use
 Intermediate/*
 Plugins/*
-Content/*
+Content/Levels/*
+Content/Maps/*
+Content/Textures/*
+Content/Geometry/*
+Content/FPWeapon/*
+Content/FirstPerson/*
 
 # Cache files for the editor to use
 DerivedDataCache/*

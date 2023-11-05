@@ -7,6 +7,10 @@
 #include "Components/InputComponent.h"
 #include "Camera/CameraComponent.h"
 //#include "Kismet/GameplayStatics.h"
+#include "PrintMacros.h"
+
+#include "DrawDebugHelpers.h"
+#include "Interactable.h"
 #include "GameFramework/PlayerController.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -87,6 +91,8 @@ void AGopnikRouletteCharacter::SetupPlayerInputComponent(UInputComponent* Player
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AGopnikRouletteCharacter::OnFire);
+	// Bind Interact event
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AGopnikRouletteCharacter::Interact);
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGopnikRouletteCharacter::MoveForward);
@@ -99,6 +105,35 @@ void AGopnikRouletteCharacter::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindAxis("TurnRate", this, &AGopnikRouletteCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AGopnikRouletteCharacter::LookUpAtRate);
+}
+
+void AGopnikRouletteCharacter::Interact()
+{
+	Server_Interact(this, FirstPersonCameraComponent->GetForwardVector());
+
+	// FVector TraceStart = FirstPersonCameraComponent->GetComponentLocation();
+	// FVector TraceEnd = TraceStart + FirstPersonCameraComponent->GetForwardVector() * 350.0f;
+}
+
+void AGopnikRouletteCharacter::Server_Interact_Implementation(AGopnikRouletteCharacter* Actor, FVector ForwardVector)
+{
+	FHitResult Hit;
+
+	FVector TraceStart = Actor->FirstPersonCameraComponent->GetComponentLocation();
+	FVector TraceEnd = TraceStart + ForwardVector * 350.0f;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(Actor);
+
+	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Camera, QueryParams);
+
+	IInteractable* InteractableActor = Cast<IInteractable>(Hit.GetActor());
+
+	if (Hit.bBlockingHit && InteractableActor)
+	{
+		// InteractableActor->Execute_Interact(Cast<UObject>(Hit.GetActor()));
+		IInteractable::Execute_Interact(Cast<UObject>(Hit.GetActor()));
+	}
 }
 
 void AGopnikRouletteCharacter::OnFire()
@@ -138,31 +173,6 @@ void AGopnikRouletteCharacter::OnFire()
 			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
 	}
-}
-
-void AGopnikRouletteCharacter::BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	if (TouchItem.bIsPressed == true)
-	{
-		return;
-	}
-	if ((FingerIndex == TouchItem.FingerIndex) && (TouchItem.bMoved == false))
-	{
-		OnFire();
-	}
-	TouchItem.bIsPressed = true;
-	TouchItem.FingerIndex = FingerIndex;
-	TouchItem.Location = Location;
-	TouchItem.bMoved = false;
-}
-
-void AGopnikRouletteCharacter::EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	if (TouchItem.bIsPressed == false)
-	{
-		return;
-	}
-	TouchItem.bIsPressed = false;
 }
 
 void AGopnikRouletteCharacter::MoveForward(float Value)

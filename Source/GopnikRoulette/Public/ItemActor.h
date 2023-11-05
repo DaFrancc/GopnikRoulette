@@ -22,10 +22,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintNativeEvent)
-	void Interact() override;
-	virtual void Interact_Implementation();
+	virtual void Interact_Implementation() override;
 
-	
-
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_Kill();
 };
